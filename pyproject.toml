@@ -29,6 +29,9 @@ ytx = "youtube_transcript_extractor.__main__:main"
 testpaths = ["tests"]
 addopts = "-q"
 
+[tool.vercel]
+entrypoint = "src.youtube_transcript_extractor.app:app"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
