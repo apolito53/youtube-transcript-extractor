@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Transcript Formatter</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">LOCAL YOUTUBE TOOL</p>
+        <h1>Turn a video into useful text.</h1>
+        <p class="lede">
+          Paste a YouTube URL, pull its captions, and get a clean Markdown
+          transcript ready for ChatGPT or your notes.
+        </p>
+      </header>
+
+      <section class="card controls-card">
+        <form id="extract-form">
+          <label for="url">YouTube URL</label>
+          <div class="url-row">
+            <input
+              id="url"
+              name="url"
+              type="url"
+              placeholder="https://www.youtube.com/watch?v=..."
+              autocomplete="url"
+              required
+            >
+            <button class="primary" type="submit">Extract &amp; format</button>
+          </div>
+          <div class="options">
+            <label class="option">
+              <span>Language</span>
+              <input id="language" name="language" type="text" placeholder="Auto" maxlength="16">
+            </label>
+            <label class="checkbox-option">
+              <input id="include-timestamps" name="include-timestamps" type="checkbox">
+              <span>Include timestamp links</span>
+            </label>
+          </div>
+        </form>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </section>
+
+      <section id="details" class="details" hidden>
+        <div>
+          <strong id="video-title">Transcript</strong>
+          <span id="video-author"></span>
+        </div>
+        <div class="chips">
+          <span id="language-chip" class="chip"></span>
+          <span id="caption-chip" class="chip"></span>
+        </div>
+      </section>
+
+      <section id="output-card" class="card output-card" hidden>
+        <div class="output-toolbar">
+          <div class="tabs" role="tablist" aria-label="Transcript output">
+            <button id="clean-tab" class="tab active" type="button" role="tab">Clean</button>
+            <button id="formatted-tab" class="tab" type="button" role="tab" disabled>AI formatted</button>
+          </div>
+          <div class="actions">
+            <button id="copy-button" class="secondary" type="button">Copy</button>
+            <button id="download-button" class="secondary" type="button">Download .md</button>
+          </div>
+        </div>
+        <div id="warnings" class="warnings" hidden></div>
+        <pre id="output" class="output" tabindex="0"></pre>
+      </section>
+
+      <footer>
+        <span>Runs locally. Your transcript stays in this browser session.</span>
+        <span id="ai-note">AI formatting is optional.</span>
+      </footer>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
