@@ -63,6 +63,16 @@ undocumented YouTube web-client endpoint. It is intentionally isolated in
 youtube.py so a future fallback can be added without changing the rest of
 the app.
 
+## Deployment note
+
+The app starts successfully on Vercel, but YouTube may block transcript
+requests from Vercel's serverless/cloud-provider IPs. This is an egress issue,
+not a FastAPI or OpenAI configuration issue. Before relying on a public
+deployment, add a rotating residential proxy supported by
+`youtube-transcript-api`, or move transcript extraction behind a hosted
+transcript provider. Do not commit proxy credentials; keep them in deployment
+environment variables.
+
 ## Development
 
 Run the focused test suite:
