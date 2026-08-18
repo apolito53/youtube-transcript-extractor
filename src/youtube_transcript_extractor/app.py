@@ -24,6 +24,7 @@ from .models import (
     FormatResponse,
 )
 from .normalize import render_document
+from .phase0_x402 import attach_phase0_x402_routes
 from .youtube import YouTubeTranscriptClient, extract_video_id
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -74,6 +75,7 @@ def create_app(
         else TranscriptCache(settings.cache_path)
     )
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    attach_phase0_x402_routes(app, settings)
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
@@ -85,6 +87,7 @@ def create_app(
             "status": "ok",
             "ai_formatting_configured": app.state.formatter.available,
             "proxy_configured": bool(settings.proxy_url),
+            "phase0_x402_enabled": settings.phase0_x402_enabled,
         }
 
     @app.post("/api/extract", response_model=ExtractResponse)
