@@ -1,0 +1,91 @@
+name: Phase 0 Fly preflight
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - .ops/phase0-fly-preflight.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      YTX_PROVIDER_WALLET_SECRET: ${{ secrets.YTX_PROVIDER_WALLET_SECRET }}
+      YOUTUBE_TRANSCRIPT_PROVIDER_WALLET_SECRET: ${{ secrets.YOUTUBE_TRANSCRIPT_PROVIDER_WALLET_SECRET }}
+      YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_WALLET_SECRET: ${{ secrets.YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_WALLET_SECRET }}
+      PROVIDER_WALLET_SECRET: ${{ secrets.PROVIDER_WALLET_SECRET }}
+      APP_NAME: youtube-transcript-extractor-gtphbw
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project dependencies
+        run: python -m pip install -e .
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Inspect sanitized deployment inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${FLY_API_TOKEN:-}"
+
+          source_name=''
+          raw=''
+          for candidate in \
+            YTX_PROVIDER_WALLET_SECRET \
+            YOUTUBE_TRANSCRIPT_PROVIDER_WALLET_SECRET \
+            YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_WALLET_SECRET \
+            PROVIDER_WALLET_SECRET; do
+            value="${!candidate:-}"
+            if [ -n "$value" ]; then
+              source_name="$candidate"
+              raw="$value"
+              break
+            fi
+          done
+          test -n "$raw"
+
+          provider_address="$(RAW_PROVIDER_WALLET_SECRET="$raw" python - <<'PY'
+          import os
+          from eth_account import Account
+          print(Account.from_key(os.environ['RAW_PROVIDER_WALLET_SECRET']).address)
+          PY
+          )"
+          unset raw
+
+          if flyctl secrets list --app "$APP_NAME" --json >/tmp/fly-secrets.json 2>/tmp/fly-secrets.err; then
+            jq '[.[] | (.Name // .name)] | map(select(. != null)) | sort' /tmp/fly-secrets.json > /tmp/fly-secret-names.json
+          else
+            flyctl secrets list --app "$APP_NAME" > /tmp/fly-secrets.txt
+            awk 'NR > 1 && NF > 0 {print $1}' /tmp/fly-secrets.txt | sort -u | jq -R -s 'split("\n") | map(select(length > 0))' > /tmp/fly-secret-names.json
+          fi
+
+          mkdir -p .ops
+          jq -n \
+            --arg app "$APP_NAME" \
+            --arg provider_secret_source "$source_name" \
+            --arg provider_address "$provider_address" \
+            --slurpfile fly_secret_names /tmp/fly-secret-names.json \
+            '{app:$app,fly_token_present:true,provider_secret_present:true,provider_secret_source:$provider_secret_source,provider_address:$provider_address,fly_secret_names:$fly_secret_names[0]}' \
+            > .ops/phase0-fly-preflight.json
+          cat .ops/phase0-fly-preflight.json
+      - name: Persist sanitized preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'nova-ops[bot]'
+          git config user.email 'nova-ops[bot]@users.noreply.github.com'
+          git add .ops/phase0-fly-preflight.json
+          git commit -m 'Record sanitized Phase 0 Fly preflight' || exit 0
+          for attempt in 1 2 3; do
+            if git pull --rebase origin master && git push origin HEAD:master; then exit 0; fi
+            sleep 2
+          done
+          exit 1
