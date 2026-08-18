@@ -14,6 +14,7 @@ dependencies = [
     "openai>=1.50,<2",
     "python-dotenv>=1.0,<2",
     "uvicorn[standard]>=0.27,<0.35",
+    "x402[fastapi,evm]==2.17.0",
     "youtube-transcript-api>=1.0,<2",
 ]
 
