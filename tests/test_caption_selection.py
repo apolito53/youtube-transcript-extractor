@@ -1,10 +1,14 @@
+import json
+
 import pytest
+import youtube_transcript_api
 
 from youtube_transcript_extractor.errors import TranscriptUnavailable
 from youtube_transcript_extractor.youtube import (
     CaptionTrack,
     YouTubeTranscriptClient,
     choose_caption_track,
+    fetch_oembed_metadata,
 )
 
 
@@ -79,3 +83,122 @@ def test_client_adapts_library_objects_and_adds_best_effort_metadata():
     assert result.author == "A Creator"
     assert result.language_code == "en"
     assert [segment.text for segment in result.segments] == ["Hello", "world."]
+
+
+def test_client_uses_direct_youtube_api_without_proxy(monkeypatch):
+    calls = []
+
+    class CapturingApi:
+        def __init__(self, **kwargs):
+            calls.append(kwargs)
+
+    monkeypatch.setattr(youtube_transcript_api, "YouTubeTranscriptApi", CapturingApi)
+
+    YouTubeTranscriptClient()._make_api()
+
+    assert calls == [{}]
+
+
+def test_client_routes_youtube_api_through_configured_proxy(monkeypatch):
+    calls = []
+
+    class CapturingApi:
+        def __init__(self, **kwargs):
+            calls.append(kwargs)
+
+    monkeypatch.setattr(youtube_transcript_api, "YouTubeTranscriptApi", CapturingApi)
+
+    YouTubeTranscriptClient(
+        proxy_url="http://user:password@proxy.example.com:8080"
+    )._make_api()
+
+    proxy_config = calls[0]["proxy_config"]
+    assert proxy_config.to_requests_dict() == {
+        "http": "http://user:password@proxy.example.com:8080",
+        "https": "http://user:password@proxy.example.com:8080",
+    }
+
+
+def test_oembed_metadata_uses_configured_proxy(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        status = 200
+
+        def read(self):
+            return json.dumps(
+                {"title": "Proxy Video", "author_name": "Proxy Creator"}
+            ).encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return False
+
+    class FakeOpener:
+        def open(self, request, timeout):
+            captured["request"] = request
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+    def fake_build_opener(handler):
+        captured["proxies"] = handler.proxies
+        return FakeOpener()
+
+    monkeypatch.setattr(
+        "youtube_transcript_extractor.youtube.build_opener",
+        fake_build_opener,
+    )
+
+    metadata = fetch_oembed_metadata(
+        "https://youtu.be/dQw4w9WgXcQ",
+        proxy_url="http://proxy.example.com:8080",
+    )
+
+    assert metadata == {"title": "Proxy Video", "author": "Proxy Creator"}
+    assert captured["proxies"] == {
+        "http": "http://proxy.example.com:8080",
+        "https": "http://proxy.example.com:8080",
+    }
+    assert captured["timeout"] == 5
+
+
+def test_oembed_metadata_keeps_direct_connection_without_proxy(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        status = 200
+
+        def read(self):
+            return json.dumps(
+                {"title": "Direct Video", "author_name": "Direct Creator"}
+            ).encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return False
+
+    def fake_urlopen(request, timeout):
+        captured["request"] = request
+        captured["timeout"] = timeout
+        return FakeResponse()
+
+    def unexpected_build_opener(*args):
+        raise AssertionError("direct requests should not build a proxy opener")
+
+    monkeypatch.setattr(
+        "youtube_transcript_extractor.youtube.urlopen",
+        fake_urlopen,
+    )
+    monkeypatch.setattr(
+        "youtube_transcript_extractor.youtube.build_opener",
+        unexpected_build_opener,
+    )
+
+    metadata = fetch_oembed_metadata("https://youtu.be/dQw4w9WgXcQ")
+
+    assert metadata == {"title": "Direct Video", "author": "Direct Creator"}
+    assert captured["timeout"] == 5

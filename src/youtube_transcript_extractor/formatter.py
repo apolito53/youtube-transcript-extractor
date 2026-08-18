@@ -55,6 +55,10 @@ class OpenAIFormatter:
     def available(self) -> bool:
         return bool(self.api_key or self._client)
 
+    @property
+    def cache_key(self) -> str:
+        return "openai:{}:{}".format(self.model, PROMPT_VERSION)
+
     def _get_client(self):
         if not self.available:
             raise FormatterUnavailable()

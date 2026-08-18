@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -12,6 +13,10 @@ class Settings:
     host: str
     port: int
     max_transcript_chars: int
+    cache_path: str = str(
+        Path.home() / ".cache" / "youtube-transcript-extractor" / "transcripts.sqlite3"
+    )
+    proxy_url: Optional[str] = None
 
 
 def get_settings() -> Settings:
@@ -22,4 +27,12 @@ def get_settings() -> Settings:
         host=os.getenv("YTX_HOST", "127.0.0.1"),
         port=int(os.getenv("YTX_PORT", "8765")),
         max_transcript_chars=int(os.getenv("YTX_MAX_TRANSCRIPT_CHARS", "500000")),
+        cache_path=os.getenv("YTX_CACHE_PATH")
+        or str(
+            Path.home()
+            / ".cache"
+            / "youtube-transcript-extractor"
+            / "transcripts.sqlite3"
+        ),
+        proxy_url=os.getenv("YTX_PROXY_URL") or None,
     )

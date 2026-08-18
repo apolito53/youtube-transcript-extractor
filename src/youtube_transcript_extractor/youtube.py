@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Iterable, List, Optional
 from urllib.parse import quote, urlparse
-from urllib.request import Request, urlopen
+from urllib.request import ProxyHandler, Request, build_opener, urlopen
 
 from .errors import (
     InvalidYouTubeUrl,
@@ -159,14 +159,21 @@ def _segments_from_fetched(fetched: object) -> List[CaptionSegment]:
     return segments
 
 
-def fetch_oembed_metadata(source_url: str) -> dict:
+def fetch_oembed_metadata(source_url: str, proxy_url: Optional[str] = None) -> dict:
     """Best-effort title/author lookup; transcript extraction does not depend on it."""
     endpoint = "https://www.youtube.com/oembed?url={}&format=json".format(
         quote(source_url, safe="")
     )
     request = Request(endpoint, headers={"User-Agent": "ytx/0.1"})
     try:
-        with urlopen(request, timeout=5) as response:
+        if proxy_url:
+            opener = build_opener(
+                ProxyHandler({"http": proxy_url, "https": proxy_url})
+            )
+            response_context = opener.open(request, timeout=5)
+        else:
+            response_context = urlopen(request, timeout=5)
+        with response_context as response:
             if response.status < 200 or response.status >= 300:
                 return {}
             payload = json.loads(response.read().decode("utf-8"))
@@ -185,20 +192,27 @@ class YouTubeTranscriptClient:
         self,
         api_factory: Optional[Callable[[], object]] = None,
         metadata_fetcher: Optional[Callable[[str], dict]] = None,
+        proxy_url: Optional[str] = None,
     ):
         self._api_factory = api_factory
-        self._metadata_fetcher = metadata_fetcher or fetch_oembed_metadata
+        self._proxy_url = proxy_url
+        self._metadata_fetcher = metadata_fetcher
 
     def _make_api(self):
         if self._api_factory:
             return self._api_factory()
         try:
             from youtube_transcript_api import YouTubeTranscriptApi
+            from youtube_transcript_api.proxies import GenericProxyConfig
         except ImportError as exc:
             raise TranscriptUnavailable(
                 "Install the project dependencies before extracting transcripts."
             ) from exc
-        return YouTubeTranscriptApi()
+        if not self._proxy_url:
+            return YouTubeTranscriptApi()
+        return YouTubeTranscriptApi(
+            proxy_config=GenericProxyConfig(http_url=self._proxy_url)
+        )
 
     @staticmethod
     def _classify_exception(exc: Exception) -> TranscriptError:
@@ -229,7 +243,10 @@ class YouTubeTranscriptClient:
         except Exception as exc:
             raise self._classify_exception(exc) from exc
 
-        metadata = self._metadata_fetcher(source_url)
+        if self._metadata_fetcher is not None:
+            metadata = self._metadata_fetcher(source_url)
+        else:
+            metadata = fetch_oembed_metadata(source_url, self._proxy_url)
         return TranscriptDocument(
             video_id=video_id,
             source_url=source_url,

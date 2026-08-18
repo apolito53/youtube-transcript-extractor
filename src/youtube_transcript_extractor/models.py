@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -34,11 +35,23 @@ class ExtractRequest(BaseModel):
     url: str = Field(min_length=1, max_length=2048)
     language: Optional[str] = Field(default=None, max_length=16)
     include_timestamps: bool = False
+    refresh: bool = False
+
+
+class AnalysisInfo(BaseModel):
+    version: int = Field(ge=1)
+    analyzed_at: datetime
+    transcript_from_cache: bool
+    formatted_from_cache: bool = False
 
 
 class ExtractResponse(BaseModel):
     transcript: TranscriptDocument
     clean_markdown: str
+    formatted_markdown: Optional[str] = None
+    formatting_available: bool = False
+    formatting_message: Optional[str] = None
+    analysis: AnalysisInfo
     warnings: List[str] = Field(default_factory=list)
 
 

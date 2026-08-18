@@ -45,7 +45,15 @@ If uv is installed, the equivalent commands are:
 - Preserves non-speech cues such as [Music].
 - Optionally adds timestamp links back to the video.
 - Provides deterministic clean output even when AI formatting is unavailable.
-- Keeps transcript data in the current browser session; there is no database.
+- Caches transcripts and AI-formatted output locally, so repeat requests avoid
+  calling YouTube or OpenAI again.
+- Supports explicit refreshes that retain the previous analysis and create v2,
+  v3, and later versions with the analysis date embedded in the Markdown.
+
+The cache key includes the YouTube video and requested language. Changing the
+timestamp option reuses the same transcript version and caches a separate
+formatted view. Select **Refresh cached transcript** only when you want to fetch
+the video again and create the next version.
 
 ## Configuration
 
@@ -54,24 +62,64 @@ The application reads these environment variables:
 - OPENAI_API_KEY: optional key for AI formatting.
 - OPENAI_MODEL: model name, default gpt-5.6-luna.
 - YTX_HOST: bind address, default 127.0.0.1.
-- YTX_PORT: bind port, default 8000.
+- YTX_PORT: bind port, default 8765.
 - YTX_MAX_TRANSCRIPT_CHARS: maximum transcript size sent to the formatter,
   default 500000.
+- YTX_CACHE_PATH: SQLite cache location, default
+  `~/.cache/youtube-transcript-extractor/transcripts.sqlite3`.
+- YTX_PROXY_URL: optional HTTP proxy URL for YouTube caption and metadata
+  requests. When unset, requests connect directly as before.
 
 The YouTube caption adapter uses youtube-transcript-api, which accesses an
 undocumented YouTube web-client endpoint. It is intentionally isolated in
 youtube.py so a future fallback can be added without changing the rest of
 the app.
 
-## Deployment note
+## Hosted deployment and proxies
 
 The app starts successfully on Vercel, but YouTube may block transcript
-requests from Vercel's serverless/cloud-provider IPs. This is an egress issue,
-not a FastAPI or OpenAI configuration issue. Before relying on a public
-deployment, add a rotating residential proxy supported by
-`youtube-transcript-api`, or move transcript extraction behind a hosted
-transcript provider. Do not commit proxy credentials; keep them in deployment
-environment variables.
+requests from Vercel's serverless/cloud-provider IPs. This is an egress IP
+issue, not a FastAPI or OpenAI configuration issue.
+
+For a hosted deployment, configure a rotating residential HTTP proxy as a
+secret environment variable:
+
+    YTX_PROXY_URL=http://username:password@p.webshare.io:80
+
+Only requests to YouTube use this setting; OpenAI requests do not. Leave it
+unset locally to keep using the direct connection. The health endpoint reports
+`proxy_configured: true` when the setting was loaded, without exposing the URL
+or credentials. If the username or password contains URL punctuation, percent-
+encode it. Do not commit proxy credentials.
+
+A generic data-center proxy may be blocked for the same reason as the hosting
+provider. If a proxy is not an option, move transcript extraction behind a
+hosted transcript provider instead.
+
+The recommended provider for this adapter is Webshare's **Residential**
+(rotating residential) product. Do not use its free **Proxy Server** product or
+the **Static Residential** product for this purpose. Copy the rotating endpoint
+credentials from Webshare's endpoint generator into `YTX_PROXY_URL`.
+
+### Fly.io
+
+The included Dockerfile and fly.toml deploy one Fly Machine in `ord`, with the
+`ytx_data` volume mounted at `/data` for the SQLite cache. Keep this deployment
+at one Machine unless the cache is moved to shared storage; Fly Volumes are
+attached to individual Machines and SQLite is not a multi-host database.
+
+For a new app, create its volume once, import secrets without committing them,
+and deploy without a spare Machine:
+
+    flyctl volumes create ytx_data --region ord --size 1 --app your-app
+    flyctl secrets import --app your-app
+    flyctl deploy --app your-app --ha=false
+
+Enter `OPENAI_API_KEY=...` and `YTX_PROXY_URL=...` for the `secrets import`
+command, then press Ctrl-D. The checked-in config sets
+`YTX_CACHE_PATH=/data/transcripts.sqlite3`. The application does not currently
+provide authentication or rate limiting, so protect the public URL before
+sharing it broadly when AI formatting is enabled.
 
 ## Development
 
@@ -89,4 +137,4 @@ workflow with a public captioned video when you want an end-to-end check.
 - Whisper/audio transcription when captions are absent.
 - Playlist and batch processing.
 - Translation and summary presets.
-- Browser extension and saved transcript history.
+- Browser extension and a UI for browsing older transcript versions.

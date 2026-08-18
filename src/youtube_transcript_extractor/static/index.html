@@ -9,11 +9,11 @@
   <body>
     <main class="shell">
       <header class="hero">
-        <p class="eyebrow">LOCAL YOUTUBE TOOL</p>
+        <p class="eyebrow">YOUTUBE TRANSCRIPT TOOL</p>
         <h1>Turn a video into useful text.</h1>
         <p class="lede">
-          Paste a YouTube URL, pull its captions, and get a clean Markdown
-          transcript ready for ChatGPT or your notes.
+          Paste a YouTube URL, pull its captions, and get a clean, formatted
+          plain-text or Markdown transcript.
         </p>
       </header>
 
@@ -40,6 +40,10 @@
               <input id="include-timestamps" name="include-timestamps" type="checkbox">
               <span>Include timestamp links</span>
             </label>
+            <label class="checkbox-option" title="Fetch YouTube again and save a new transcript version">
+              <input id="refresh-cache" name="refresh-cache" type="checkbox">
+              <span>Refresh cached transcript</span>
+            </label>
           </div>
         </form>
         <div id="status" class="status" role="status" aria-live="polite"></div>
@@ -53,6 +57,8 @@
         <div class="chips">
           <span id="language-chip" class="chip"></span>
           <span id="caption-chip" class="chip"></span>
+          <span id="version-chip" class="chip"></span>
+          <span id="cache-chip" class="chip" hidden></span>
         </div>
       </section>
 
@@ -72,7 +78,7 @@
       </section>
 
       <footer>
-        <span>Runs locally. Your transcript stays in this browser session.</span>
+        <span>Analyses are cached for faster repeat requests.</span>
         <span id="ai-note">AI formatting is optional.</span>
       </footer>
     </main>
