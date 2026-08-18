@@ -1,7 +1,11 @@
 import pytest
 
 from youtube_transcript_extractor.errors import FormatterUnavailable
-from youtube_transcript_extractor.formatter import FORMATTER_INSTRUCTIONS, OpenAIFormatter
+from youtube_transcript_extractor.formatter import (
+    FORMATTER_INSTRUCTIONS,
+    PROMPT_VERSION,
+    OpenAIFormatter,
+)
 
 
 class FakeResponses:
@@ -33,6 +37,15 @@ def test_formatter_uses_responses_api_and_strips_code_fences():
     assert call["store"] is False
     assert call["instructions"] == FORMATTER_INSTRUCTIONS
     assert "<transcript>" in call["input"]
+
+
+def test_formatter_instructions_remove_non_speech_cue_tags():
+    assert "Remove bracketed non-speech cue tags" in FORMATTER_INSTRUCTIONS
+    assert "[music]" in FORMATTER_INSTRUCTIONS
+    assert "regardless of capitalization" in FORMATTER_INSTRUCTIONS
+    assert "Preserve non-speech cues" not in FORMATTER_INSTRUCTIONS
+
+    assert PROMPT_VERSION == "v2"
 
 
 def test_formatter_without_key_is_optional():
