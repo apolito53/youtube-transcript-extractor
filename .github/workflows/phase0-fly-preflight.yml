@@ -16,10 +16,16 @@ jobs:
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       YTX_PROVIDER_WALLET_SECRET: ${{ secrets.YTX_PROVIDER_WALLET_SECRET }}
+      YTX_WALLET_SECRET: ${{ secrets.YTX_WALLET_SECRET }}
+      YTX_PROVIDER_SECRET: ${{ secrets.YTX_PROVIDER_SECRET }}
       YOUTUBE_TRANSCRIPT_PROVIDER_WALLET_SECRET: ${{ secrets.YOUTUBE_TRANSCRIPT_PROVIDER_WALLET_SECRET }}
+      YOUTUBE_TRANSCRIPT_WALLET_SECRET: ${{ secrets.YOUTUBE_TRANSCRIPT_WALLET_SECRET }}
       YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_WALLET_SECRET: ${{ secrets.YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_WALLET_SECRET }}
+      YOUTUBE_TRANSCRIPT_EXTRACTOR_WALLET_SECRET: ${{ secrets.YOUTUBE_TRANSCRIPT_EXTRACTOR_WALLET_SECRET }}
+      YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_SECRET: ${{ secrets.YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_SECRET }}
       PROVIDER_WALLET_SECRET: ${{ secrets.PROVIDER_WALLET_SECRET }}
       APP_NAME: youtube-transcript-extractor-gtphbw
+      KNOWN_TEST_BUYER: 0x60d46F6b4c420b6405EEeB09dB07D92E0BD0DcEa
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,8 +46,13 @@ jobs:
           raw=''
           for candidate in \
             YTX_PROVIDER_WALLET_SECRET \
+            YTX_WALLET_SECRET \
+            YTX_PROVIDER_SECRET \
             YOUTUBE_TRANSCRIPT_PROVIDER_WALLET_SECRET \
+            YOUTUBE_TRANSCRIPT_WALLET_SECRET \
             YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_WALLET_SECRET \
+            YOUTUBE_TRANSCRIPT_EXTRACTOR_WALLET_SECRET \
+            YOUTUBE_TRANSCRIPT_EXTRACTOR_PROVIDER_SECRET \
             PROVIDER_WALLET_SECRET; do
             value="${!candidate:-}"
             if [ -n "$value" ]; then
@@ -50,14 +61,16 @@ jobs:
               break
             fi
           done
-          test -n "$raw"
 
-          provider_address="$(RAW_PROVIDER_WALLET_SECRET="$raw" python - <<'PY'
+          provider_address=''
+          if [ -n "$raw" ]; then
+            provider_address="$(RAW_PROVIDER_WALLET_SECRET="$raw" python - <<'PY'
           import os
           from eth_account import Account
           print(Account.from_key(os.environ['RAW_PROVIDER_WALLET_SECRET']).address)
           PY
           )"
+          fi
           unset raw
 
           if flyctl secrets list --app "$APP_NAME" --json >/tmp/fly-secrets.json 2>/tmp/fly-secrets.err; then
@@ -67,13 +80,33 @@ jobs:
             awk 'NR > 1 && NF > 0 {print $1}' /tmp/fly-secrets.txt | sort -u | jq -R -s 'split("\n") | map(select(length > 0))' > /tmp/fly-secret-names.json
           fi
 
+          # PAY_TO_ADDRESS is expected to be a public EVM address. Read only an
+          # address-shaped value from the running Machine; discard all other output.
+          fly_pay_to=''
+          if ssh_output="$(flyctl ssh console --app "$APP_NAME" -C 'printenv PAY_TO_ADDRESS' 2>/tmp/fly-ssh.err || true)"; then
+            fly_pay_to="$(printf '%s' "$ssh_output" | grep -Eo '0x[0-9A-Fa-f]{40}' | head -n1 || true)"
+          fi
+
+          provider_present=false
+          if [ -n "$provider_address" ]; then provider_present=true; fi
+          fly_pay_to_present=false
+          if [ -n "$fly_pay_to" ]; then fly_pay_to_present=true; fi
+          fly_pay_to_matches_test_buyer=false
+          if [ -n "$fly_pay_to" ] && [ "${fly_pay_to,,}" = "${KNOWN_TEST_BUYER,,}" ]; then
+            fly_pay_to_matches_test_buyer=true
+          fi
+
           mkdir -p .ops
           jq -n \
             --arg app "$APP_NAME" \
             --arg provider_secret_source "$source_name" \
             --arg provider_address "$provider_address" \
+            --arg fly_pay_to_address "$fly_pay_to" \
+            --argjson provider_secret_present "$provider_present" \
+            --argjson fly_pay_to_present "$fly_pay_to_present" \
+            --argjson fly_pay_to_matches_known_test_buyer "$fly_pay_to_matches_test_buyer" \
             --slurpfile fly_secret_names /tmp/fly-secret-names.json \
-            '{app:$app,fly_token_present:true,provider_secret_present:true,provider_secret_source:$provider_secret_source,provider_address:$provider_address,fly_secret_names:$fly_secret_names[0]}' \
+            '{app:$app,fly_token_present:true,provider_secret_present:$provider_secret_present,provider_secret_source:$provider_secret_source,provider_address:$provider_address,fly_secret_names:$fly_secret_names[0],fly_pay_to_address_present:$fly_pay_to_present,fly_pay_to_address:$fly_pay_to_address,fly_pay_to_matches_known_test_buyer:$fly_pay_to_matches_known_test_buyer}' \
             > .ops/phase0-fly-preflight.json
           cat .ops/phase0-fly-preflight.json
       - name: Persist sanitized preflight
