@@ -8,6 +8,7 @@ primary_region = "ord"
   YTX_HOST = "0.0.0.0"
   YTX_PORT = "8080"
   YTX_CACHE_PATH = "/data/transcripts.sqlite3"
+  YTX_PHASE0_STATE_PATH = "/data/phase0.sqlite3"
 
 [mounts]
   source = "ytx_data"
