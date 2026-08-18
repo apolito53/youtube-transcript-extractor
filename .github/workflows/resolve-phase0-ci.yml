@@ -1,0 +1,58 @@
+name: Resolve Phase 0 CI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - .ops/resolve-phase0-ci.trigger
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: ecf767e5081798440174dc428c0ff8145c03c0c5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Resolve exact test workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          run=''
+          for _ in $(seq 1 50); do
+            runs="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${TARGET_SHA}&event=push&per_page=100")"
+            run="$(jq -c '[.workflow_runs[] | select(.name == "test")] | sort_by(.created_at) | last // empty' <<<"$runs")"
+            if [ -n "$run" ]; then
+              status="$(jq -r '.status' <<<"$run")"
+              if [ "$status" = completed ]; then break; fi
+            fi
+            sleep 5
+          done
+          test -n "$run"
+          mkdir -p .ops
+          jq -n \
+            --arg target_sha "$TARGET_SHA" \
+            --argjson run "$run" \
+            '{target_sha:$target_sha,run_id:$run.id,status:$run.status,conclusion:$run.conclusion,created_at:$run.created_at,updated_at:$run.updated_at}' \
+            > .ops/phase0-ci-result.json
+          cat .ops/phase0-ci-result.json
+      - name: Persist result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'nova-ops[bot]'
+          git config user.email 'nova-ops[bot]@users.noreply.github.com'
+          git add .ops/phase0-ci-result.json
+          git commit -m 'Record Phase 0 CI result' || exit 0
+          for attempt in 1 2 3; do
+            if git pull --rebase origin master && git push origin HEAD:master; then exit 0; fi
+            sleep 2
+          done
+          exit 1
