@@ -59,7 +59,7 @@ jobs:
           flyctl secrets set --app "$APP_NAME" \
             YTX_PHASE0_X402_ENABLED=true \
             YTX_PHASE0_NETWORK="$NETWORK" \
-            YTX_PHASE0_PRICE='\$0.001' \
+            YTX_PHASE0_PRICE='$0.001' \
             YTX_PHASE0_PAY_TO_ADDRESS="$PROVIDER" \
             YTX_PHASE0_EXPECTED_BUYER_ADDRESS="$EXPECTED_BUYER" \
             --stage
@@ -83,7 +83,7 @@ jobs:
           phase0_code="$(curl -sS -o /tmp/phase0-health.json -w '%{http_code}' "$origin/internal/phase0/x402/health")"
           test "$phase0_code" = 200
           test "$(jq -r '.network' /tmp/phase0-health.json)" = "$NETWORK"
-          test "$(jq -r '.price' /tmp/phase0-health.json)" = '\$0.001'
+          test "$(jq -r '.price' /tmp/phase0-health.json)" = '$0.001'
           test "$(jq -r '.expected_buyer_configured' /tmp/phase0-health.json)" = true
 
           challenge_code="$(curl -sS -o /tmp/challenge-body.json -D /tmp/challenge-headers.txt -w '%{http_code}' \
