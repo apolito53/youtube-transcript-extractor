@@ -7,7 +7,7 @@ name = "youtube-transcript-extractor"
 version = "0.1.0"
 description = "Extract, clean, and format YouTube transcripts locally."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.103,<0.116",
     "httpx>=0.24,<0.29",
