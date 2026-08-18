@@ -1,0 +1,131 @@
+name: Deploy Phase 0 Sepolia harness
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - .ops/phase0-deploy-request.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ytx-phase0-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP_NAME: youtube-transcript-extractor-gtphbw
+      EXPECTED_BUYER: 0x60d46F6b4c420b6405EEeB09dB07D92E0BD0DcEa
+      NETWORK: eip155:84532
+      TEST_USDC: 0x036CbD53842c5426634e7929541eC2318f3dCF7e
+      EXPECTED_AMOUNT: "1000"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Validate bounded deployment request
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          request='.ops/phase0-deploy-request.json'
+          provider="$(jq -r '.provider_address // empty' "$request")"
+          enabled="$(jq -r '.enable_phase0 // false' "$request")"
+          if ! [[ "$provider" =~ ^0x[0-9A-Fa-f]{40}$ ]]; then
+            echo 'provider_address must be an EVM address' >&2
+            exit 1
+          fi
+          if [ "$enabled" != true ]; then
+            echo 'enable_phase0 must be true' >&2
+            exit 1
+          fi
+          if [ "${provider,,}" = "${EXPECTED_BUYER,,}" ]; then
+            echo 'provider address must not equal the known test buyer' >&2
+            exit 1
+          fi
+          echo "provider=$provider" >> "$GITHUB_OUTPUT"
+      - name: Set testnet-only Phase 0 runtime configuration
+        shell: bash
+        env:
+          PROVIDER: ${{ steps.request.outputs.provider }}
+        run: |
+          set -euo pipefail
+          flyctl secrets set --app "$APP_NAME" \
+            YTX_PHASE0_X402_ENABLED=true \
+            YTX_PHASE0_NETWORK="$NETWORK" \
+            YTX_PHASE0_PRICE='\$0.001' \
+            YTX_PHASE0_PAY_TO_ADDRESS="$PROVIDER" \
+            YTX_PHASE0_EXPECTED_BUYER_ADDRESS="$EXPECTED_BUYER" \
+            --stage
+      - name: Deploy current master without HA expansion
+        run: flyctl deploy --app "$APP_NAME" --ha=false --remote-only
+      - name: Verify live testnet challenge contract
+        shell: bash
+        env:
+          PROVIDER: ${{ steps.request.outputs.provider }}
+        run: |
+          set -euo pipefail
+          origin="https://${APP_NAME}.fly.dev"
+          for _ in $(seq 1 30); do
+            health_code="$(curl -sS -o /tmp/health.json -w '%{http_code}' "$origin/api/health" || true)"
+            if [ "$health_code" = 200 ]; then break; fi
+            sleep 2
+          done
+          test "$health_code" = 200
+          test "$(jq -r '.phase0_x402_enabled' /tmp/health.json)" = true
+
+          phase0_code="$(curl -sS -o /tmp/phase0-health.json -w '%{http_code}' "$origin/internal/phase0/x402/health")"
+          test "$phase0_code" = 200
+          test "$(jq -r '.network' /tmp/phase0-health.json)" = "$NETWORK"
+          test "$(jq -r '.price' /tmp/phase0-health.json)" = '\$0.001'
+          test "$(jq -r '.expected_buyer_configured' /tmp/phase0-health.json)" = true
+
+          challenge_code="$(curl -sS -o /tmp/challenge-body.json -D /tmp/challenge-headers.txt -w '%{http_code}' \
+            -H 'accept: application/json' -H 'content-type: application/json' \
+            --data '{"mode":"success","marker":"deploy-preflight"}' \
+            "$origin/internal/phase0/x402")"
+          test "$challenge_code" = 402
+          encoded="$(awk 'BEGIN{IGNORECASE=1} /^payment-required:/ {sub(/^[^:]+:[[:space:]]*/,""); gsub(/\r/,""); print; exit}' /tmp/challenge-headers.txt)"
+          test -n "$encoded"
+          PAYMENT_REQUIRED="$encoded" PROVIDER="$PROVIDER" NETWORK="$NETWORK" TEST_USDC="$TEST_USDC" EXPECTED_AMOUNT="$EXPECTED_AMOUNT" python - <<'PY'
+          import base64, json, os
+          payload = json.loads(base64.b64decode(os.environ['PAYMENT_REQUIRED']).decode())
+          assert payload.get('x402Version') == 2
+          accepted = payload.get('accepts') or []
+          matches = [item for item in accepted if (
+              item.get('scheme') == 'exact'
+              and item.get('network') == os.environ['NETWORK']
+              and str(item.get('asset','')).lower() == os.environ['TEST_USDC'].lower()
+              and str(item.get('amount')) == os.environ['EXPECTED_AMOUNT']
+              and str(item.get('payTo','')).lower() == os.environ['PROVIDER'].lower()
+          )]
+          assert matches, payload
+          PY
+
+          mkdir -p .ops
+          jq -n \
+            --arg provider "$PROVIDER" \
+            --arg network "$NETWORK" \
+            --arg asset "$TEST_USDC" \
+            --arg amount_usdc "0.001" \
+            '{status:"ok",phase0_enabled:true,provider_address:$provider,network:$network,asset:$asset,amount_usdc:$amount_usdc,unpaid_challenge_http:402}' \
+            > .ops/phase0-deploy-result.json
+      - name: Persist sanitized deployment evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'nova-ops[bot]'
+          git config user.email 'nova-ops[bot]@users.noreply.github.com'
+          git add .ops/phase0-deploy-result.json
+          git commit -m 'Record Phase 0 Sepolia deployment evidence' || exit 0
+          for attempt in 1 2 3; do
+            if git pull --rebase origin master && git push origin HEAD:master; then exit 0; fi
+            sleep 2
+          done
+          exit 1
