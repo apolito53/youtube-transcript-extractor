@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "exit_code": 1,
+  "output": "Traceback (most recent call last):\n  File \"<stdin>\", line 26, in <module>\nAttributeError: 'coroutine' object has no attribute 'model_dump'\ninitialized_and_built=true\nrequirements= {\"amount\": \"1000\", \"asset\": \"0x036CbD53842c5426634e7929541eC2318f3dCF7e\", \"extra\": {\"name\": \"USDC\", \"version\": \"2\"}, \"maxTimeoutSeconds\": 300, \"network\": \"eip155:84532\", \"payTo\": \"0x9632c7eD958612C79DdBEF7EA9798D0950b207f9\", \"scheme\": \"exact\"}\nTraceback (most recent call last):\n  File \"<stdin>\", line 26, in <module>\nAttributeError: 'coroutine' object has no attribute 'model_dump'\nsys:1: RuntimeWarning: coroutine 'x402ResourceServer.create_payment_required_response' was never awaited\n"
+}
