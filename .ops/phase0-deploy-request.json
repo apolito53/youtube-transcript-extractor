@@ -1,4 +1,5 @@
 {
   "enable_phase0": true,
-  "provider_address": "0x9632c7eD958612C79DdBEF7EA9798D0950b207f9"
+  "provider_address": "0x9632c7eD958612C79DdBEF7EA9798D0950b207f9",
+  "nonce": "2026-08-18T23:14:00-04:00"
 }
