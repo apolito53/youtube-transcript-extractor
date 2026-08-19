@@ -1,0 +1,9 @@
+{
+  "status": "ok",
+  "phase0_enabled": true,
+  "provider_address": "0x9632c7eD958612C79DdBEF7EA9798D0950b207f9",
+  "network": "eip155:84532",
+  "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "amount_usdc": "0.001",
+  "unpaid_challenge_http": 402
+}
