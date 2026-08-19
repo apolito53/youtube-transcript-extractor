@@ -35,14 +35,17 @@ Phase0Mode = Literal[
 
 class Phase0Request(BaseModel):
     mode: Phase0Mode = "success"
-    delay_ms: int = Field(default=0, ge=0, le=10_000)
+    delay_ms: int = Field(default=0, ge=0, le=300_000)
     marker: str = Field(default="phase0", min_length=1, max_length=128)
 
 
 class Phase0Store:
     """Small persistent probe ledger; never a production payment source of truth."""
 
-    def __init__(self, path: str):
+    def __init__(
+        self,
+        path: str,
+    ):
         self.path = Path(path).expanduser()
 
     def _connect(self) -> sqlite3.Connection:
@@ -211,6 +214,9 @@ def _build_real_server(settings: Any) -> tuple[Any, Any]:
         settings.phase0_x402_network,
         ExactEvmServerScheme(),
     )
+    # x402 2.17 requires initialization before payment requirements can be
+    # constructed. Initialization discovers the facilitator's supported kinds.
+    server.initialize()
     requirements = server.build_payment_requirements(
         ResourceConfig(
             scheme="exact",
@@ -225,7 +231,11 @@ def _build_real_server(settings: Any) -> tuple[Any, Any]:
 
 
 def _settlement_success(settlement: Any) -> bool:
-    return bool(getattr(settlement, "success", False) if not isinstance(settlement, dict) else settlement.get("success"))
+    return bool(
+        getattr(settlement, "success", False)
+        if not isinstance(settlement, dict)
+        else settlement.get("success")
+    )
 
 
 def _payer(verify_result: Any) -> Optional[str]:
@@ -260,14 +270,6 @@ def attach_phase0_x402_routes(
 
     state_store = store or Phase0Store(settings.phase0_x402_state_path)
     decode_payload = payload_decoder or _default_payload_decoder
-
-    @app.on_event("startup")
-    async def _initialize_phase0_server() -> None:
-        initialize = getattr(resource_server, "initialize", None)
-        if initialize:
-            result = initialize()
-            if hasattr(result, "__await__"):
-                await result
 
     @app.get("/internal/phase0/x402/health")
     async def phase0_health() -> dict[str, Any]:
@@ -361,16 +363,28 @@ def attach_phase0_x402_routes(
                         },
                         headers={"PAYMENT-RESPONSE": _encode_header(settlement)},
                     )
-                state_store.record_settlement_attempt(payment_key, "SETTLEMENT_UNKNOWN")
+                state_store.record_settlement_attempt(
+                    payment_key,
+                    "SETTLEMENT_UNKNOWN",
+                )
                 return JSONResponse(
                     status_code=503,
-                    content={"error": "settlement_still_unknown", "payment_key": payment_key},
+                    content={
+                        "error": "settlement_still_unknown",
+                        "payment_key": payment_key,
+                    },
                 )
             except Exception:
-                state_store.record_settlement_attempt(payment_key, "SETTLEMENT_UNKNOWN")
+                state_store.record_settlement_attempt(
+                    payment_key,
+                    "SETTLEMENT_UNKNOWN",
+                )
                 return JSONResponse(
                     status_code=503,
-                    content={"error": "settlement_still_unknown", "payment_key": payment_key},
+                    content={
+                        "error": "settlement_still_unknown",
+                        "payment_key": payment_key,
+                    },
                 )
 
         verify_result = await resource_server.verify_payment(payment_payload, requirements)
@@ -388,7 +402,10 @@ def attach_phase0_x402_routes(
             state_store.mark_status(payment_key, "FAILED_AFTER_VERIFY_UNSETTLED")
             return JSONResponse(
                 status_code=503,
-                content={"error": "synthetic_fail_after_verify", "payment_key": payment_key},
+                content={
+                    "error": "synthetic_fail_after_verify",
+                    "payment_key": payment_key,
+                },
             )
 
         if body.delay_ms:
@@ -408,21 +425,30 @@ def attach_phase0_x402_routes(
             state_store.mark_status(payment_key, "FAILED_AFTER_WORK_UNSETTLED")
             return JSONResponse(
                 status_code=503,
-                content={"error": "synthetic_fail_after_work", "payment_key": payment_key},
+                content={
+                    "error": "synthetic_fail_after_work",
+                    "payment_key": payment_key,
+                },
             )
 
         try:
             settlement = await resource_server.settle_payment(payment_payload, requirements)
             settlement_data = _model_dump(settlement)
         except Exception:
-            state_store.record_settlement_attempt(payment_key, "SETTLEMENT_UNKNOWN")
+            state_store.record_settlement_attempt(
+                payment_key,
+                "SETTLEMENT_UNKNOWN",
+            )
             return JSONResponse(
                 status_code=503,
                 content={"error": "settlement_unknown", "payment_key": payment_key},
             )
 
         if not _settlement_success(settlement):
-            state_store.record_settlement_attempt(payment_key, "SETTLEMENT_UNKNOWN")
+            state_store.record_settlement_attempt(
+                payment_key,
+                "SETTLEMENT_UNKNOWN",
+            )
             return JSONResponse(
                 status_code=503,
                 content={"error": "settlement_unknown", "payment_key": payment_key},
@@ -431,18 +457,31 @@ def attach_phase0_x402_routes(
         if body.mode == "settlement_ack_loss":
             # Deliberately discard the successful response to simulate losing the
             # facilitator acknowledgement after remote settlement.
-            state_store.record_settlement_attempt(payment_key, "SETTLEMENT_UNKNOWN")
+            state_store.record_settlement_attempt(
+                payment_key,
+                "SETTLEMENT_UNKNOWN",
+            )
             return JSONResponse(
                 status_code=503,
-                content={"error": "synthetic_settlement_ack_loss", "payment_key": payment_key},
+                content={
+                    "error": "synthetic_settlement_ack_loss",
+                    "payment_key": payment_key,
+                },
             )
 
-        state_store.record_settlement_attempt(payment_key, "SETTLED", settlement_data)
+        state_store.record_settlement_attempt(
+            payment_key,
+            "SETTLED",
+            settlement_data,
+        )
 
         duplicate_probe: Optional[dict[str, Any]] = None
         if body.mode == "duplicate_settlement_probe":
             try:
-                duplicate = await resource_server.settle_payment(payment_payload, requirements)
+                duplicate = await resource_server.settle_payment(
+                    payment_payload,
+                    requirements,
+                )
                 duplicate_probe = _model_dump(duplicate)
                 state_store.record_settlement_attempt(
                     payment_key,
@@ -460,7 +499,10 @@ def attach_phase0_x402_routes(
         if body.mode == "response_loss":
             return JSONResponse(
                 status_code=503,
-                content={"error": "synthetic_response_loss", "payment_key": payment_key},
+                content={
+                    "error": "synthetic_response_loss",
+                    "payment_key": payment_key,
+                },
             )
 
         response_body: dict[str, Any] = {
