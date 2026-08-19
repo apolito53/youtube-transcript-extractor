@@ -6,6 +6,7 @@ EXPECTED_BUYER="0x60d46F6b4c420b6405EEeB09dB07D92E0BD0DcEa"
 NETWORK="eip155:84532"
 TEST_USDC="0x036CbD53842c5426634e7929541eC2318f3dCF7e"
 EXPECTED_AMOUNT="1000"
+FACILITATOR_URL="https://facilitator.xpay.sh"
 
 : "${FLY_API_TOKEN:?FLY_API_TOKEN is required}"
 : "${PROVIDER_ADDRESS:?PROVIDER_ADDRESS is required}"
@@ -23,6 +24,7 @@ flyctl secrets set --app "$APP_NAME" \
   YTX_PHASE0_X402_ENABLED=true \
   YTX_PHASE0_NETWORK="$NETWORK" \
   YTX_PHASE0_PRICE='$0.001' \
+  YTX_PHASE0_FACILITATOR_URL="$FACILITATOR_URL" \
   YTX_PHASE0_PAY_TO_ADDRESS="$PROVIDER_ADDRESS" \
   YTX_PHASE0_EXPECTED_BUYER_ADDRESS="$EXPECTED_BUYER" \
   --stage
@@ -79,6 +81,7 @@ jq -n \
   --arg network "$NETWORK" \
   --arg asset "$TEST_USDC" \
   --arg amount_usdc "0.001" \
-  '{status:"ok",phase0_enabled:true,provider_address:$provider,network:$network,asset:$asset,amount_usdc:$amount_usdc,unpaid_challenge_http:402}' \
+  --arg facilitator "$FACILITATOR_URL" \
+  '{status:"ok",phase0_enabled:true,provider_address:$provider,network:$network,asset:$asset,amount_usdc:$amount_usdc,facilitator_url:$facilitator,unpaid_challenge_http:402}' \
   > .ops/phase0-deploy-result.json
 cat .ops/phase0-deploy-result.json
