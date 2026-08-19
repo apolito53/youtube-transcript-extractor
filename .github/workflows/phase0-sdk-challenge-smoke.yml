@@ -24,6 +24,7 @@ jobs:
         run: |
           set +e
           python - <<'PY' > /tmp/smoke.txt 2>&1
+          import asyncio
           import base64
           import json
           import traceback
@@ -37,7 +38,8 @@ jobs:
               phase0_x402_price='$0.001',
               phase0_x402_pay_to_address='0x9632c7eD958612C79DdBEF7EA9798D0950b207f9',
           )
-          try:
+
+          async def main():
               server, requirements = _build_real_server(settings)
               print('initialized_and_built=true')
               print('requirements=', json.dumps(requirements.model_dump(by_alias=True), sort_keys=True))
@@ -49,11 +51,16 @@ jobs:
                       'mime_type': 'application/json',
                   },
               )
+              if hasattr(required, '__await__'):
+                  required = await required
               print('payment_required=', json.dumps(required.model_dump(by_alias=True), sort_keys=True))
               encoded = _encode_header(required)
               print('encoded_bytes=', len(encoded.encode()))
               decoded = json.loads(base64.b64decode(encoded).decode())
               print('roundtrip=', json.dumps(decoded, sort_keys=True))
+
+          try:
+              asyncio.run(main())
           except Exception:
               traceback.print_exc()
               raise
