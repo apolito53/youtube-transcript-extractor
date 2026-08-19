@@ -24,7 +24,7 @@ from .models import (
     FormatResponse,
 )
 from .normalize import render_document
-from .phase0_chain_recovery import install_phase0_chain_recovery
+from .phase0_event_recovery import install_phase0_event_chain_recovery
 from .phase0_x402 import attach_phase0_x402_routes
 from .youtube import YouTubeTranscriptClient, extract_video_id
 
@@ -77,7 +77,7 @@ def create_app(
     )
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     attach_phase0_x402_routes(app, settings)
-    install_phase0_chain_recovery(app, settings)
+    install_phase0_event_chain_recovery(app, settings)
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
