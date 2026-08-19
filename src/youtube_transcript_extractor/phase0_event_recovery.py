@@ -2,13 +2,14 @@
 
 Circle's EIP-3009 implementation emits AuthorizationUsed(authorizer, nonce) when
 an authorization is consumed for transfer and emits AuthorizationCanceled for a
-cancellation.  Requiring AuthorizationUsed and the exact ERC-20 Transfer in the
+cancellation. Requiring AuthorizationUsed and the exact ERC-20 Transfer in the
 same transaction binds recovery to the signed payment without depending on the
 facilitator's outer transaction calldata shape.
 """
 
 from __future__ import annotations
 
+import time
 from typing import Any, Optional
 
 from .phase0_chain_recovery import (
@@ -22,7 +23,10 @@ from .phase0_chain_recovery import (
 class Phase0EventChainRecovery(Phase0ChainRecovery):
     """Recover a settlement from correlated AuthorizationUsed + Transfer logs."""
 
-    def _find_exact_transfer(self, web3: Any, row: Any) -> Optional[str]:
+    POLL_ATTEMPTS = 8
+    POLL_INTERVAL_SECONDS = 0.75
+
+    def _find_exact_transfer_once(self, web3: Any, row: Any) -> Optional[str]:
         from web3 import Web3
 
         token = Web3.to_checksum_address(row["asset"])
@@ -77,6 +81,17 @@ class Phase0EventChainRecovery(Phase0ChainRecovery):
             if int.from_bytes(bytes(log["data"]), "big") != amount:
                 continue
             return "0x" + bytes(log["transactionHash"]).hex()
+        return None
+
+    def _find_exact_transfer(self, web3: Any, row: Any) -> Optional[str]:
+        """Poll briefly for RPC/indexing propagation of a just-settled transfer."""
+
+        for attempt in range(self.POLL_ATTEMPTS):
+            transaction = self._find_exact_transfer_once(web3, row)
+            if transaction:
+                return transaction
+            if attempt + 1 < self.POLL_ATTEMPTS:
+                time.sleep(self.POLL_INTERVAL_SECONDS)
         return None
 
 
