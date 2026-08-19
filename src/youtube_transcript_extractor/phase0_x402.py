@@ -316,6 +316,8 @@ def attach_phase0_x402_routes(
                     "mime_type": "application/json",
                 },
             )
+            if hasattr(payment_required, "__await__"):
+                payment_required = await payment_required
             return JSONResponse(
                 status_code=402,
                 content={"error": "payment_required"},
