@@ -9,8 +9,14 @@ facilitator's outer transaction calldata shape.
 
 from __future__ import annotations
 
+import asyncio
+import os
 import time
+import uuid
 from typing import Any, Optional
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
 
 from .phase0_chain_recovery import (
     AUTHORIZATION_STATE_ABI,
@@ -18,6 +24,10 @@ from .phase0_chain_recovery import (
     _topic_address,
     install_phase0_chain_recovery,
 )
+from .phase0_x402 import _default_payload_decoder, _payment_key
+
+
+PHASE0_BOOT_ID = uuid.uuid4().hex
 
 
 class Phase0EventChainRecovery(Phase0ChainRecovery):
@@ -96,9 +106,55 @@ class Phase0EventChainRecovery(Phase0ChainRecovery):
 
 
 def install_phase0_event_chain_recovery(app: Any, settings: Any) -> None:
-    """Install event-correlated reconciliation for the synthetic Phase 0 route."""
+    """Install event-correlated reconciliation and restart-test controls."""
 
     if not settings.phase0_x402_enabled:
         return
     recovery = Phase0EventChainRecovery(settings.phase0_x402_state_path)
     install_phase0_chain_recovery(app, settings, recovery=recovery)
+
+    @app.get("/internal/phase0/x402/recovery-health")
+    async def phase0_recovery_health() -> dict[str, Any]:
+        return {
+            "status": "ok",
+            "boot_id": PHASE0_BOOT_ID,
+            "pid": os.getpid(),
+        }
+
+    @app.post("/internal/phase0/x402/crash-after-unknown")
+    async def phase0_crash_after_unknown(request: Request) -> JSONResponse:
+        payment_header = request.headers.get("payment-signature")
+        if not payment_header:
+            return JSONResponse(status_code=401, content={"error": "payment_signature_required"})
+
+        try:
+            payment_payload = _default_payload_decoder(payment_header)
+            payment_key = _payment_key(payment_payload)
+            status = recovery.get_status(payment_key)
+        except Exception:
+            return JSONResponse(status_code=400, content={"error": "invalid_payment_signature"})
+
+        if status != "SETTLEMENT_UNKNOWN":
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "error": "operation_not_settlement_unknown",
+                    "payment_key": payment_key,
+                    "status": status,
+                },
+            )
+
+        async def terminate_after_response() -> None:
+            await asyncio.sleep(0.25)
+            os._exit(78)
+
+        asyncio.create_task(terminate_after_response())
+        return JSONResponse(
+            status_code=202,
+            content={
+                "status": "crash_scheduled",
+                "payment_key": payment_key,
+                "boot_id": PHASE0_BOOT_ID,
+                "pid": os.getpid(),
+            },
+        )
