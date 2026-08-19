@@ -3,8 +3,6 @@ name: Deploy Phase 0 Sepolia harness
 on:
   push:
     branches: [master]
-    paths:
-      - .ops/phase0-deploy-request.json
 
 permissions:
   contents: write
@@ -28,8 +26,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: master
+          fetch-depth: 2
+      - name: Gate on exact deployment-request change
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          should_run=false
+          if git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" | grep -Fxq '.ops/phase0-deploy-request.json'; then
+            should_run=true
+          fi
+          echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
+          echo "Phase 0 deploy requested: $should_run"
       - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: steps.gate.outputs.should_run == 'true'
       - name: Validate bounded deployment request
+        if: steps.gate.outputs.should_run == 'true'
         id: request
         shell: bash
         run: |
@@ -51,6 +63,7 @@ jobs:
           fi
           echo "provider=$provider" >> "$GITHUB_OUTPUT"
       - name: Set testnet-only Phase 0 runtime configuration
+        if: steps.gate.outputs.should_run == 'true'
         shell: bash
         env:
           PROVIDER: ${{ steps.request.outputs.provider }}
@@ -64,8 +77,10 @@ jobs:
             YTX_PHASE0_EXPECTED_BUYER_ADDRESS="$EXPECTED_BUYER" \
             --stage
       - name: Deploy current master without HA expansion
+        if: steps.gate.outputs.should_run == 'true'
         run: flyctl deploy --app "$APP_NAME" --ha=false --remote-only
       - name: Verify live testnet challenge contract
+        if: steps.gate.outputs.should_run == 'true'
         shell: bash
         env:
           PROVIDER: ${{ steps.request.outputs.provider }}
@@ -117,6 +132,7 @@ jobs:
             '{status:"ok",phase0_enabled:true,provider_address:$provider,network:$network,asset:$asset,amount_usdc:$amount_usdc,unpaid_challenge_http:402}' \
             > .ops/phase0-deploy-result.json
       - name: Persist sanitized deployment evidence
+        if: steps.gate.outputs.should_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
