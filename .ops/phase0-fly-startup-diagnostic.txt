@@ -1,0 +1,122 @@
+=== fly status ===
+[1mApp[0m
+ Name     │ youtube-transcript-extractor-gtphbw                                       
+ Owner    │ personal                                                                  
+ Hostname │ youtube-transcript-extractor-gtphbw.fly.dev                               
+ Image    │ youtube-transcript-extractor-gtphbw:deployment-01M0C0C2SBFGS0DZBXE33RDVBY 
+
+[1mMachines[0m
+ PROCESS │ ID             │ VERSION │ REGION │ STATE   │ ROLE │ CHECKS             │ LAST UPDATED         
+ app     │ 28627d6c461e18 │ 4       │ ord    │ stopped │      │ 1 total, 1 warning │ 2026-08-19T03:21:33Z 
+
+
+=== fly machine list ===
+1 machines have been retrieved from app youtube-transcript-extractor-gtphbw.
+View them in the UI here (​https://fly.io/apps/youtube-transcript-extractor-gtphbw/machines/)
+
+[1myoutube-transcript-extractor-gtphbw[0m
+ ID             │ NAME              │ STATE   │ CHECKS │ REGION │ ROLE │ IMAGE                                                                     │ IP ADDRESS                      │ VOLUME               │ CREATED              │ LAST UPDATED         │ PROCESS GROUP │ SIZE                
+ 28627d6c461e18 │ crimson-fire-9913 │ stopped │ 0/1    │ ord    │      │ youtube-transcript-extractor-gtphbw:deployment-01M0C0C2SBFGS0DZBXE33RDVBY │ fdaa:a5:787c:a7b:872:16a:f54a:2 │ vol_rnz6n3d15x3wqmpr │ 2026-08-14T16:44:33Z │ 2026-08-19T03:21:33Z │ app           │ shared-cpu-1x:512MB 
+
+
+=== recent fly logs ===
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 435, in load
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    self.loaded_app = import_from_string(self.app)
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    module = importlib.import_module(module_str)
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    return _bootstrap._gcd_import(name[level:], package, level)
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/app.py", line 264, in <module>
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    app = create_app()
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]          ^^^^^^^^^^^^
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/app.py", line 78, in create_app
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    attach_phase0_x402_routes(app, settings)
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/phase0_x402.py", line 259, in attach_phase0_x402_routes
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    resource_server, requirements = _build_real_server(settings)
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/phase0_x402.py", line 214, in _build_real_server
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    requirements = server.build_payment_requirements(
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/x402/server_base.py", line 471, in build_payment_requirements
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    raise RuntimeError("Server not initialized. Call initialize() first.")
+[2m2026-08-19T03:21:01Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]RuntimeError: Server not initialized. Call initialize() first.
+[2m2026-08-19T03:21:02Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Main child exited normally with code: 1
+[2m2026-08-19T03:21:02Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Starting clean up.
+[2m2026-08-19T03:21:04Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Umounting /dev/vdc from /data
+[2m2026-08-19T03:21:04Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][    7.879551] reboot: Restarting system
+[2m2026-08-19T03:21:21Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]2026-08-19T03:21:21.139174264 [01M0C0DGNRNB1P80MM99MAW5RH:main] Running Firecracker v1.14.4
+[2m2026-08-19T03:21:21Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]2026-08-19T03:21:21.139349336 [01M0C0DGNRNB1P80MM99MAW5RH:main] Listening on API socket ("/fc.sock").
+[2m2026-08-19T03:21:21Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Starting init (commit: cbc5c46)...
+[2m2026-08-19T03:21:22Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Checking filesystem on /data
+[2m2026-08-19T03:21:22Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]/dev/vdc: clean, 12/64512 files, 8912/258048 blocks
+[2m2026-08-19T03:21:22Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Mounting /dev/vdc at /data w/ uid: 0, gid: 0 and chmod 0755
+[2m2026-08-19T03:21:22Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Resized /data to 1056964608 bytes
+[2m2026-08-19T03:21:22Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Preparing to run: `docker-entrypoint.sh ytx` as root
+[2m2026-08-19T03:21:22Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m [fly api proxy] listening at /.fly/api
+[2m2026-08-19T03:21:22Z[0m runner[28627d6c461e18] [32mord[0m [[34minfo[0m]Machine started in 1.405s
+[2m2026-08-19T03:21:22Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]2026/08/19 03:21:22 INFO SSH listening listen_address=[fdaa:a5:787c:a7b:872:16a:f54a:2]:22
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]Traceback (most recent call last):
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/bin/ytx", line 8, in <module>
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    sys.exit(main())
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]             ^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/__main__.py", line 8, in main
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    uvicorn.run(
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 580, in run
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    server.run()
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 66, in run
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    return asyncio.run(self.serve(sockets=sockets))
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    return runner.run(main)
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]           ^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    return self._loop.run_until_complete(task)
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 70, in serve
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    await self._serve(sockets)
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 77, in _serve
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    config.load()
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 435, in load
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    self.loaded_app = import_from_string(self.app)
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    module = importlib.import_module(module_str)
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    return _bootstrap._gcd_import(name[level:], package, level)
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/app.py", line 264, in <module>
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    app = create_app()
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]          ^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/app.py", line 78, in create_app
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    attach_phase0_x402_routes(app, settings)
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/phase0_x402.py", line 259, in attach_phase0_x402_routes
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    resource_server, requirements = _build_real_server(settings)
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/youtube_transcript_extractor/phase0_x402.py", line 214, in _build_real_server
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    requirements = server.build_payment_requirements(
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/x402/server_base.py", line 471, in build_payment_requirements
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    raise RuntimeError("Server not initialized. Call initialize() first.")
+[2m2026-08-19T03:21:26Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]RuntimeError: Server not initialized. Call initialize() first.
+[2m2026-08-19T03:21:27Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Main child exited normally with code: 1
+[2m2026-08-19T03:21:27Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Starting clean up.
+[2m2026-08-19T03:21:29Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][32m INFO[0m Umounting /dev/vdc from /data
+[2m2026-08-19T03:21:29Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m][    8.195811] reboot: Restarting system
+[2m2026-08-19T03:21:33Z[0m runner[28627d6c461e18] [32mord[0m [[34minfo[0m]machine has reached its max restart count of 10
