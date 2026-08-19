@@ -1,0 +1,63 @@
+name: Resolve YTE provider address
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - .ops/resolve-yte-provider-address.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RAW_PROVIDER_WALLET_SECRET: ${{ secrets.YTE_PROVIDER_WALLET_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install 'eth-account>=0.13,<0.14'
+      - name: Derive public provider address only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${RAW_PROVIDER_WALLET_SECRET:-}"
+          provider="$(python - <<'PY'
+          import json, os, re
+          from eth_account import Account
+          raw = os.environ['RAW_PROVIDER_WALLET_SECRET'].strip()
+          if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "\"'":
+              raw = raw[1:-1].strip()
+          if raw.startswith('{') and raw.endswith('}'):
+              parsed = json.loads(raw)
+              raw = str(parsed.get('privateKey') or parsed.get('private_key') or parsed.get('privateKeyHex') or parsed.get('secret') or '').strip()
+          if re.fullmatch(r'[0-9a-fA-F]{64}', raw):
+              raw = '0x' + raw
+          if not re.fullmatch(r'0x[0-9a-fA-F]{64}', raw):
+              raise SystemExit('provider secret is not a supported 32-byte EVM private-key export')
+          print(Account.from_key(raw).address)
+          PY
+          )"
+          test -n "$provider"
+          mkdir -p .ops
+          jq -n --arg provider "$provider" '{secret_name:"YTE_PROVIDER_WALLET_SECRET",provider_address:$provider}' > .ops/phase0-provider-address.json
+          cat .ops/phase0-provider-address.json
+      - name: Persist public address
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'nova-ops[bot]'
+          git config user.email 'nova-ops[bot]@users.noreply.github.com'
+          git add .ops/phase0-provider-address.json
+          git commit -m 'Record Phase 0 provider address' || exit 0
+          for attempt in 1 2 3; do
+            if git pull --rebase origin master && git push origin HEAD:master; then exit 0; fi
+            sleep 2
+          done
+          exit 1
