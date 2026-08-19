@@ -20,8 +20,6 @@ View them in the UI here (​https://fly.io/apps/youtube-transcript-extractor-gt
 
 
 === recent fly logs ===
-[2m2026-08-19T03:29:27Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    raise exc
-[2m2026-08-19T03:29:27Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 165, in __call__
 [2m2026-08-19T03:29:27Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    await self.app(scope, receive, _send)
 [2m2026-08-19T03:29:27Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
 [2m2026-08-19T03:29:27Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
@@ -121,3 +119,4 @@ View them in the UI here (​https://fly.io/apps/youtube-transcript-extractor-gt
 [2m2026-08-19T03:30:43Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]TypeError: value cannot be serialized as an x402 model
 [2m2026-08-19T03:30:57Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]INFO:     172.19.36.121:45008 - "GET /api/health HTTP/1.1" 200 OK
 [2m2026-08-19T03:31:27Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]INFO:     172.19.36.121:63996 - "GET /api/health HTTP/1.1" 200 OK
+[2m2026-08-19T03:31:57Z[0m app[28627d6c461e18] [32mord[0m [[34minfo[0m]INFO:     172.19.36.121:54410 - "GET /api/health HTTP/1.1" 200 OK
