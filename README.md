@@ -113,6 +113,21 @@ The recommended provider for this adapter is Webshare's **Residential**
 the **Static Residential** product for this purpose. Copy the rotating endpoint
 credentials from Webshare's endpoint generator into `YTX_PROXY_URL`.
 
+## Failure logging
+
+Failed API requests and degraded dependencies are written to stderr as
+structured JSON through Uvicorn's error logger. Each request receives an
+`X-Request-ID` response header; the browser includes its first 12 characters in
+the visible error so an incident can be matched to a log entry.
+
+Logs include the request path, status, duration, safe error code, validated
+video ID, and exception class chain. They intentionally omit submitted URLs,
+transcript contents, exception messages, proxy credentials, and API keys.
+
+On Fly.io, inspect the application logs with:
+
+    flyctl logs --app youtube-transcript-extractor-gtphbw
+
 ### Fly.io
 
 The included Dockerfile and fly.toml deploy one Fly Machine in `ord`, with the

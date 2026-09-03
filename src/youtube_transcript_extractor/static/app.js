@@ -66,7 +66,11 @@ function errorMessage(error) {
 
 async function readJson(response) {
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(errorMessage(payload));
+  if (!response.ok) {
+    const requestId = response.headers.get("X-Request-ID");
+    const reference = requestId ? " Reference: " + requestId.slice(0, 12) + "." : "";
+    throw new Error(errorMessage(payload) + reference);
+  }
   return payload;
 }
 

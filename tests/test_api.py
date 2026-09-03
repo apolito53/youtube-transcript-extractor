@@ -1,7 +1,11 @@
+import json
+import logging
+
 from fastapi.testclient import TestClient
 
 from youtube_transcript_extractor.app import create_app
 from youtube_transcript_extractor.config import Settings
+from youtube_transcript_extractor.errors import FormatterError, TranscriptBlocked
 from youtube_transcript_extractor.models import CaptionSegment, TranscriptDocument
 
 
@@ -100,6 +104,78 @@ def test_health_reports_proxy_configuration_without_exposing_url(tmp_path):
     assert response.json()["proxy_configured"] is True
     assert proxy_url not in response.text
     assert app.state.transcript_client._proxy_url == proxy_url
+
+
+def test_blocked_extract_logs_sanitized_failure_with_request_id(tmp_path, caplog):
+    class UpstreamRequestBlocked(Exception):
+        pass
+
+    class BlockedTranscriptClient:
+        def fetch(self, url, language=None):
+            try:
+                raise UpstreamRequestBlocked("sensitive upstream details")
+            except UpstreamRequestBlocked as exc:
+                raise TranscriptBlocked() from exc
+
+    source_url = (
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ&private=do-not-log"
+    )
+    with caplog.at_level(logging.WARNING, logger="uvicorn.error"):
+        response = make_client(
+            tmp_path,
+            transcript_client=BlockedTranscriptClient(),
+        ).post("/api/extract", json={"url": source_url})
+
+    assert response.status_code == 503
+    request_id = response.headers["X-Request-ID"]
+    events = [json.loads(record.message) for record in caplog.records]
+    failure = next(event for event in events if event["event"] == "request_failed")
+    assert failure == {
+        "duration_ms": failure["duration_ms"],
+        "error_code": "blocked",
+        "event": "request_failed",
+        "exception_types": ["TranscriptBlocked", "UpstreamRequestBlocked"],
+        "include_timestamps": False,
+        "language": "auto",
+        "method": "POST",
+        "path": "/api/extract",
+        "refresh": False,
+        "request_id": request_id,
+        "status_code": 503,
+        "video_id": "dQw4w9WgXcQ",
+    }
+    assert source_url not in caplog.text
+    assert "sensitive upstream details" not in caplog.text
+
+
+def test_formatter_failure_is_logged_when_extract_falls_back_to_clean_output(
+    tmp_path,
+    caplog,
+):
+    class BrokenFormatter:
+        available = True
+        cache_key = "broken-formatter:v1"
+
+        def format(self, clean_markdown):
+            try:
+                raise TimeoutError("sensitive formatter details")
+            except TimeoutError as exc:
+                raise FormatterError("The formatter failed.") from exc
+
+    with caplog.at_level(logging.WARNING, logger="uvicorn.error"):
+        response = make_client(tmp_path, formatter=BrokenFormatter()).post(
+            "/api/extract",
+            json={"url": "https://youtu.be/dQw4w9WgXcQ"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["formatting_available"] is False
+    events = [json.loads(record.message) for record in caplog.records]
+    failure = next(event for event in events if event["event"] == "dependency_failed")
+    assert failure["operation"] == "formatter"
+    assert failure["status_code"] == 200
+    assert failure["exception_types"] == ["FormatterError", "TimeoutError"]
+    assert "sensitive formatter details" not in caplog.text
 
 
 def test_format_endpoint_returns_formatted_transcript(tmp_path):
