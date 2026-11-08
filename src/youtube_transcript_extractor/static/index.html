@@ -9,7 +9,10 @@
   <body>
     <main class="shell">
       <header class="hero">
-        <p class="eyebrow">YOUTUBE TRANSCRIPT TOOL</p>
+        <nav class="hero-nav" aria-label="Project">
+          <span class="eyebrow">YOUTUBE TRANSCRIPT TOOL</span>
+          <button id="release-notes-button" class="release-notes-link" type="button" aria-haspopup="dialog">What's new</button>
+        </nav>
         <h1>Turn a video into useful text.</h1>
         <p class="lede">
           Paste a YouTube URL, pull its captions, and get a clean, formatted
@@ -82,6 +85,18 @@
         <span id="ai-note">AI formatting is optional.</span>
       </footer>
     </main>
+    <dialog id="release-notes-dialog" class="release-notes-dialog" aria-labelledby="release-notes-title">
+      <div class="release-notes-heading">
+        <div>
+          <p class="eyebrow">UPDATES</p>
+          <h2 id="release-notes-title">What's new</h2>
+          <p>Recent updates to the transcript tool, with earlier highlights below.</p>
+        </div>
+        <button id="release-notes-close" class="release-notes-close" type="button" aria-label="Close release notes" autofocus>×</button>
+      </div>
+      <div id="release-notes-list" class="release-notes-list"></div>
+    </dialog>
     <script src="/static/app.js"></script>
+    <script src="/static/release-notes.js"></script>
   </body>
 </html>

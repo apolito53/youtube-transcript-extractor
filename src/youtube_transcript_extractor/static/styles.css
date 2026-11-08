@@ -35,6 +35,18 @@ body {
   margin-bottom: 28px;
 }
 
+.hero-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.hero-nav .eyebrow {
+  margin: 0;
+}
+
 .eyebrow {
   margin: 0 0 12px;
   color: var(--accent);
@@ -111,6 +123,111 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+button:focus-visible {
+  outline: 3px solid rgba(83, 103, 232, 0.45);
+  outline-offset: 3px;
+}
+
+.release-notes-link {
+  min-height: 32px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.release-notes-link:hover {
+  color: var(--accent-dark);
+}
+
+.release-notes-dialog {
+  width: min(620px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 30px;
+  color: var(--ink);
+  background: var(--card);
+  box-shadow: 0 24px 70px rgba(29, 38, 51, 0.25);
+}
+
+.release-notes-dialog::backdrop {
+  background: rgba(29, 38, 51, 0.55);
+}
+
+.release-notes-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.release-notes-heading h2 {
+  margin: 0 0 8px;
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.release-notes-heading p:not(.eyebrow) {
+  margin: 0 0 26px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.release-notes-close {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  flex: 0 0 38px;
+  align-self: flex-start;
+  padding: 0;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.release-notes-close:hover {
+  background: var(--soft-accent);
+}
+
+.release-entry {
+  border-top: 1px solid var(--line);
+  padding: 20px 0 8px;
+}
+
+.release-entry-date {
+  color: var(--accent-dark);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.release-entry h3 {
+  margin: 6px 0 9px;
+  font-size: 1.08rem;
+}
+
+.release-entry ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.release-entry li + li {
+  margin-top: 8px;
+}
+
+.release-entry li::marker {
+  color: var(--accent);
 }
 
 .primary {
@@ -282,6 +399,10 @@ footer {
 @media (max-width: 680px) {
   .shell {
     padding-top: 38px;
+  }
+
+  .release-notes-dialog {
+    padding: 24px;
   }
 
   .url-row,

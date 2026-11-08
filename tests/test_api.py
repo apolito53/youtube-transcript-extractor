@@ -79,10 +79,15 @@ def test_extract_endpoint_returns_clean_transcript(tmp_path):
 
 
 def test_index_endpoint_serves_the_local_ui(tmp_path):
-    response = make_client(tmp_path).get("/")
+    client = make_client(tmp_path)
+    response = client.get("/")
     assert response.status_code == 200
     assert "Transcript Formatter" in response.text
     assert "Refresh cached transcript" in response.text
+    assert "/static/release-notes.js" in response.text
+    notes = client.get("/static/release-notes.js")
+    assert notes.status_code == 200
+    assert "javascript" in notes.headers["content-type"]
 
 
 def test_health_reports_proxy_configuration_without_exposing_url(tmp_path):
