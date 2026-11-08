@@ -18,7 +18,7 @@ Copy .env.example to .env. AI formatting is optional; extraction and clean
 Markdown work without an OpenAI key. To enable formatting, set:
 
     OPENAI_API_KEY=your-key
-    OPENAI_MODEL=gpt-5.6-luna
+    OPENAI_MODEL=gpt-6-luna
 
 Start the app:
 
@@ -61,7 +61,7 @@ the video again and create the next version.
 The application reads these environment variables:
 
 - OPENAI_API_KEY: optional key for AI formatting.
-- OPENAI_MODEL: model name, default gpt-5.6-luna.
+- OPENAI_MODEL: model name, default gpt-6-luna.
 - YTX_HOST: bind address, default 127.0.0.1.
 - YTX_PORT: bind port, default 8765.
 - YTX_MAX_TRANSCRIPT_CHARS: maximum transcript size sent to the formatter,

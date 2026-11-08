@@ -3,6 +3,13 @@
   // in plain language alongside each production release. Use dates only when known.
   const releaseNotes = [
     {
+      label: "AI formatting",
+      title: "GPT-6 Luna is the new default",
+      changes: [
+        "Choose Extract & format again on a saved video to format its cached captions with the new model.",
+      ],
+    },
+    {
       label: "Release notes",
       title: "A place for updates",
       changes: [

@@ -2,6 +2,7 @@ import os
 import re
 from typing import List, Optional, Tuple
 
+from .config import DEFAULT_OPENAI_MODEL
 from .errors import FormatterError, FormatterUnavailable
 from .normalize import fidelity_warnings
 
@@ -48,7 +49,7 @@ class OpenAIFormatter:
         client=None,
     ):
         self.api_key = api_key if api_key is not None else os.getenv("OPENAI_API_KEY")
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
+        self.model = model or os.getenv("OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
         self._client = client
 
     @property
